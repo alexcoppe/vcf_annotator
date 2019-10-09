@@ -1,2 +1,7 @@
 # Vim temporary files
 .*
+
+# Ignore directories with testing data
+00_starting_vcfs
+01_snpsift
+tmp
