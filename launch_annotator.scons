@@ -28,6 +28,7 @@ except NameError as error:
     vars.Add("SNPSIFT_PATH", "SnpSift path", "/usr/local/snpEff")
     vars.Add("DEBUG", "Show pipeline error messages", "F")
     vars.Add("GNOMAD_ANNOTATION_FILE_PATH", "The location of the gnomAD file used for annotation", "")
+    vars.Add("DBSNP_ANNOTATION_FILE_PATH", "The location of the dbSNP file used for annotation", "")
 
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
@@ -36,6 +37,7 @@ except NameError as error:
     vcf_dir = "00_starting_vcfs"
     DEBUG          = env["DEBUG"]
     GNOMAD_ANNOTATION_FILE_PATH = env["GNOMAD_ANNOTATION_FILE_PATH"]
+    DBSNP_ANNOTATION_FILE_PATH  = env["DBSNP_ANNOTATION_FILE_PATH"]
     SNPSIFT_PATH         = os.path.join(env["SNPSIFT_PATH"], "")
 
     if not os.path.exists(vcf_dir):
@@ -49,10 +51,23 @@ except NameError as error:
         if not os.path.exists("01_snpsift"):
             sys.exit(bcolors.ERROR + "Error creating directory 01_snpsift: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
+    
+    # Check 02_dbsnp directory, if do not exists create it
+    try: 
+        os.makedirs("02_dbsnp")
+    except OSError, e:
+        if not os.path.exists("02_dbsnp"):
+            sys.exit(bcolors.ERROR + "Error creating directory 02_dbsnp: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+
 
     # Check GNOMAD_ANNOTATION_FILE_PATH
     if not os.path.exists(GNOMAD_ANNOTATION_FILE_PATH):
         sys.exit(bcolors.ERROR + "Error: GNOMAD_ANNOTATION_FILE_PATH ({}) do not exists".format(GNOMAD_ANNOTATION_FILE_PATH) + bcolors.ENDC + "\n")
+
+    # Check DBSNP_ANNOTATION_FILE_PATH
+    if not os.path.exists(DBSNP_ANNOTATION_FILE_PATH):
+        sys.exit(bcolors.ERROR + "Error: DBSNP_ANNOTATION_FILE_PATH ({}) do not exists".format(DBSNP_ANNOTATION_FILE_PATH) + bcolors.ENDC + "\n")
 
 
     # Check SNPSIFT_PATH
@@ -87,4 +102,23 @@ for vcf in vcfs_files:
         command += " 2> /dev/null "
 
     env.Command(["01_snpsift" + "/" + output_name], [input_file], command)
+
+
+    ################ DBSNP ANNOTATION STEP #####################
+
+    input_file = "01_snpsift/" + output_name
+
+    output_name = build_output_name(vcf, "dbsnp")
+
+    # Command preparation
+    first_part = "scons -f snpsift_annotate.scons SNPSIFT_PATH={} ANNOTATION_FILE_PATH={} ".format(SNPSIFT_PATH, DBSNP_ANNOTATION_FILE_PATH)
+    second_part = "INPUT_FILE_PATH=${SOURCE} "
+    third_part = "OUTPUT_DIR=02_dbsnp/  OUTPUT_NAME={}".format(output_name)
+    command = first_part + second_part + third_part
+
+    if DEBUG == "F":
+        command += " 2> /dev/null "
+
+    env.Command(["02_dbsnp" + "/" + output_name], [input_file], command)
+
     
