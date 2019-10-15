@@ -132,7 +132,7 @@ for vcf in vcfs_files:
     env.Command(["02_dbsnp" + "/" + output_name], [input_file], command)
 
 
-    ################ DBSNP ANNOTATION STEP #####################
+    ################ DBNSFP ANNOTATION STEP #####################
 
     input_file = "02_dbsnp/" + output_name
 
@@ -142,5 +142,9 @@ for vcf in vcfs_files:
     second_part = "INPUT_FILE_PATH=${SOURCE} "
     third_part = "OUTPUT_DIR=03_dbnsfp/  OUTPUT_NAME={}".format(output_name)
     command = first_part + second_part + third_part
+
+    if DEBUG == "F":
+        command += " 2> /dev/null "
+
     env.Command(["03_dbnsfp" + "/" + output_name], [input_file], command)
     
