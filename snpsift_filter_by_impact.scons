@@ -27,9 +27,9 @@ except NameError as error:
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
 
-    DEBUG          = env["DEBUG"]
-    OUTPUT_DIR     = env["OUTPUT_DIR"]
-    OUTPUT_NAME    = env["OUTPUT_NAME"]
+    DEBUG                = env["DEBUG"]
+    OUTPUT_DIR           = env["OUTPUT_DIR"]
+    OUTPUT_NAME          = env["OUTPUT_NAME"]
     INPUT_FILE_PATH      = env["INPUT_FILE_PATH"]
     SNPSIFT_PATH         = os.path.join(env["SNPSIFT_PATH"], "SnpSift.jar")
     

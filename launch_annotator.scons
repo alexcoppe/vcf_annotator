@@ -34,13 +34,15 @@ except NameError as error:
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
 
-    CPUS           = env["CPUS"]
-    vcf_dir = "00_starting_vcfs"
-    DEBUG          = env["DEBUG"]
+    CPUS                        = env["CPUS"]
+    vcf_dir                     = "00_starting_vcfs"
+    DEBUG                       = env["DEBUG"]
     GNOMAD_ANNOTATION_FILE_PATH = env["GNOMAD_ANNOTATION_FILE_PATH"]
     DBSNP_ANNOTATION_FILE_PATH  = env["DBSNP_ANNOTATION_FILE_PATH"]
     DBNSFP_ANNOTATION_FILE_PATH = env["DBNSFP_ANNOTATION_FILE_PATH"]
-    SNPSIFT_PATH         = os.path.join(env["SNPSIFT_PATH"], "")
+    SNPSIFT_PATH                = os.path.join(env["SNPSIFT_PATH"], "")
+
+    ######################## PARAMETERS CHECKING ######################
 
     if not os.path.exists(vcf_dir):
         sys.exit(bcolors.ERROR + "Directory {} do not exists".format(vcf_dir) + bcolors.ENDC + "\n")
@@ -70,10 +72,10 @@ except NameError as error:
             sys.exit(bcolors.ERROR + "Error creating directory 03_dbnsfp: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
 
-
     # Check GNOMAD_ANNOTATION_FILE_PATH
     if not os.path.exists(GNOMAD_ANNOTATION_FILE_PATH):
         sys.exit(bcolors.ERROR + "Error: GNOMAD_ANNOTATION_FILE_PATH ({}) do not exists".format(GNOMAD_ANNOTATION_FILE_PATH) + bcolors.ENDC + "\n")
+
 
     # Check DBSNP_ANNOTATION_FILE_PATH
     if not os.path.exists(DBSNP_ANNOTATION_FILE_PATH):
@@ -88,11 +90,18 @@ except NameError as error:
     Help(vars.GenerateHelpText(env))
 
 
+
+######################## CHECK IF VCFS EXIST  ######################
+
+
 all_files = [f for f in os.listdir(vcf_dir) if os.path.isfile(os.path.join(vcf_dir, f))]
 vcfs_files = [f for f in all_files if f.endswith(".vcf")]
 if len(vcfs_files) == 0:
     sys.exit(bcolors.ERROR + "No .vcf file in {} directory".format(vcf_dir) + bcolors.ENDC + "\n")
 
+
+
+######################## DO THE JOB ######################
 
 for vcf in vcfs_files:
 
