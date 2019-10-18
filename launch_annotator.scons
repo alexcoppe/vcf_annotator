@@ -157,3 +157,16 @@ for vcf in vcfs_files:
 
     env.Command(["03_dbnsfp" + "/" + output_name], [input_file], command)
     
+
+    ################ HIGH AND MODERATE FILTER #####################
+
+    input_file = "03_dbnsfp/" + output_name
+
+    output_name = build_output_name(vcf, "high_moderate")
+
+    first_part = "scons -f snpsift_filter_by_impact.scons SNPSIFT_PATH={}  ".format(SNPSIFT_PATH)
+    second_part = "INPUT_FILE_PATH=${SOURCE} "
+    third_part = "OUTPUT_DIR=04_high_moderate/  OUTPUT_NAME={}".format(output_name)
+    command = first_part + second_part + third_part
+
+    env.Command(["04_high_moderate" + "/" + output_name], [input_file], command)
