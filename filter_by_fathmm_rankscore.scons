@@ -64,7 +64,7 @@ except NameError as error:
         sys.exit(bcolors.ERROR + "DBNSFP_FATHMM_RANKSCORE should be <= 0 and >= 1"  + bcolors.ENDC + "\n")
 
     if os.path.isfile(INPUT_FILE_PATH) == False:
-        sys.exit(bcolors.ERROR + "File {} to be filtered do not exists".format(INPUT_FILE_PATH) + bcolors.ENDC + "\n")
+        sys.exit(bcolors.ERROR + "Error: file INPUT_FILE_PATH {} that should be filtered do not exists".format(INPUT_FILE_PATH) + bcolors.ENDC + "\n")
 
     Help(vars.GenerateHelpText(env))
 

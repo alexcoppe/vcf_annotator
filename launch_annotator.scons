@@ -30,6 +30,7 @@ except NameError as error:
     vars.Add("GNOMAD_ANNOTATION_FILE_PATH", "The location of the gnomAD file used for annotation", "")
     vars.Add("DBSNP_ANNOTATION_FILE_PATH", "The location of the dbSNP file used for annotation", "")
     vars.Add("DBNSFP_ANNOTATION_FILE_PATH", "The location of the dbNSFP file used for annotation", "")
+    vars.Add("FATHMM_RANKSCORE", "The FATHMM_rankscore obtained by dbNSF (default = 0.7)", "0.7")
 
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
@@ -41,6 +42,7 @@ except NameError as error:
     DBSNP_ANNOTATION_FILE_PATH  = env["DBSNP_ANNOTATION_FILE_PATH"]
     DBNSFP_ANNOTATION_FILE_PATH = env["DBNSFP_ANNOTATION_FILE_PATH"]
     SNPSIFT_PATH                = os.path.join(env["SNPSIFT_PATH"], "")
+    FATHMM_RANKSCORE            = env["FATHMM_RANKSCORE"]
 
     ######################## PARAMETERS CHECKING ######################
 
@@ -85,6 +87,16 @@ except NameError as error:
     # Check SNPSIFT_PATH
     if not os.path.exists(SNPSIFT_PATH + "/SnpSift.jar"):
         sys.exit(bcolors.ERROR + "Error: SNPSIFT_PATH ({}) is not right. Could not find SnpSift".format(SNPSIFT_PATH) + bcolors.ENDC + "\n")
+
+
+    # Check FATHMM_RANKSCORE
+    try:
+        float(FATHMM_RANKSCORE)
+    except:
+        sys.exit(bcolors.ERROR + "Error: FATHMM_RANKSCORE ({}) is not right. Shoud be a float between 0 and 1".format(FATHMM_RANKSCORE) + bcolors.ENDC + "\n")
+
+    if float(FATHMM_RANKSCORE) < 0 or float(FATHMM_RANKSCORE) > 1:
+        sys.exit(bcolors.ERROR + "FATHMM_RANKSCORE should be <= 0 and >= 1"  + bcolors.ENDC + "\n")
 
 
     Help(vars.GenerateHelpText(env))
@@ -170,3 +182,19 @@ for vcf in vcfs_files:
     command = first_part + second_part + third_part
 
     env.Command(["04_high_moderate" + "/" + output_name], [input_file], command)
+
+
+    ################ FILTER BY FATHMM_RANKSCORE #####################
+
+    input_file = "04_high_moderate/" + output_name
+
+    output_name = build_output_name(vcf, "filtered_by_fathmm")
+    #print(output_name)
+    try:
+        os.mkdir("05_filtered_by_fathmm")
+    except:
+        pass
+
+    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={}".format(FATHMM_RANKSCORE) + "  > ${TARGET}"
+
+    env.Command(["05_filtered_by_fathmm" + "/" + output_name], [input_file], command)
