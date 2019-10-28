@@ -31,6 +31,8 @@ except NameError as error:
     vars.Add("DBSNP_ANNOTATION_FILE_PATH", "The location of the dbSNP file used for annotation", "")
     vars.Add("DBNSFP_ANNOTATION_FILE_PATH", "The location of the dbNSFP file used for annotation", "")
     vars.Add("FATHMM_RANKSCORE", "The FATHMM_rankscore obtained by dbNSF (default = 0.7)", "0.7")
+    vars.Add("GENOME_VERSION", "The genome version to be used in SnpEff annotation (default = GRCh37.75)", "GRCh37.75")
+    vars.Add("SNPEFF_DATA_DIR", "The directory where the SnpEff data is present or will be downloaded (default=~/annotations)", "~/annotations")
 
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
@@ -43,6 +45,8 @@ except NameError as error:
     DBNSFP_ANNOTATION_FILE_PATH = env["DBNSFP_ANNOTATION_FILE_PATH"]
     SNPSIFT_PATH                = os.path.join(env["SNPSIFT_PATH"], "")
     FATHMM_RANKSCORE            = env["FATHMM_RANKSCORE"]
+    GENOME_VERSION              = env["GENOME_VERSION"]
+    SNPEFF_DATA_DIR             = env["SNPEFF_DATA_DIR"]
 
     ######################## PARAMETERS CHECKING ######################
 
@@ -189,12 +193,13 @@ for vcf in vcfs_files:
     input_file = "04_high_moderate/" + output_name
 
     output_name = build_output_name(vcf, "filtered_by_fathmm")
-    #print(output_name)
     try:
         os.mkdir("05_filtered_by_fathmm")
     except:
         pass
 
-    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={}".format(FATHMM_RANKSCORE) + "  > ${TARGET}"
+    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=05_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
 
-    env.Command(["05_filtered_by_fathmm" + "/" + output_name], [input_file], command)
+    env.Command("05_filtered_by_fathmm/" + output_name, input_file,  command)
+
+
