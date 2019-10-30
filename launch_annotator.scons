@@ -203,3 +203,13 @@ for vcf in vcfs_files:
     env.Command("05_filtered_by_fathmm/" + output_name, input_file,  command)
 
 
+    ################ SNPEFF ANNOTATION #####################
+
+    input_file = "05_filtered_by_fathmm/" + output_name
+
+    output_name = build_output_name(vcf, "snpeff_annotated")
+
+
+    command = "scons -f snpeff_annotate.scons OUTPUT_DIR=06_snpeff OUTPUT_NAME={} GENOME_VERSION={}".format(output_name, GENOME_VERSION) + " DATA_DIR=~/annotations SNPEFF_PATH={} ".format(SNPSIFT_PATH) + "INPUT_FILE_PATH=${SOURCE}"
+
+    env.Command(["06_snpeff/" + output_name], [input_file], command)

@@ -7,4 +7,6 @@
 02_dbsnp
 03_dbnsfp
 04_high_moderate
+05_filtered_by_fathmm
+06_snpeff
 tmp
