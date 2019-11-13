@@ -3,6 +3,8 @@ Import('*')
 import os
 import sys
 import os.path
+from os import listdir
+from os.path import isfile, join
 
 
 class bcolors:
@@ -15,6 +17,19 @@ def build_output_name(vcf, software_for_annotation):
     vcf_prefix = vcf.split(".")[0]
     output_name = vcf_prefix + "_" + software_for_annotation +  ".vcf"
     return output_name
+
+
+def is_a_strelka2_vcf(vcf_file_path):
+    is_strelka_result = False
+    f = open(vcf_file_path)
+    for line in f:
+        if line.startswith("#"):
+            if line.startswith("##source=strelka"):
+                is_strelka_result = True
+                return is_strelka_result
+    f.close()
+
+    return False
 
 
 try:
@@ -133,6 +148,8 @@ for vcf in vcfs_files:
 
     input_file = "00_starting_vcfs/" + vcf
 
+    strelka_vcf = is_a_strelka2_vcf(input_file)
+
     command = "scons -f snpeff_annotate.scons OUTPUT_DIR=01_snpeff OUTPUT_NAME={} GENOME_VERSION={}".format(output_name, GENOME_VERSION) + " DATA_DIR=~/annotations SNPEFF_PATH={} ".format(SNPSIFT_PATH) + "INPUT_FILE_PATH=${SOURCE}"
 
     env.Command(["01_snpeff/" + output_name], [input_file], command)
@@ -226,3 +243,4 @@ for vcf in vcfs_files:
 
     #env.Command("07_pass/" + output_name, input_file,  command)
     env.Command("07_pass/" + output_name, input_file,  command)
+
