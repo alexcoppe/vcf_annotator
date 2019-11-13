@@ -216,4 +216,13 @@ for vcf in vcfs_files:
     env.Command("06_filtered_by_fathmm/" + output_name, input_file,  command)
 
 
+    ################ GET ONLY THE PASS VARIANTS #####################
 
+    input_file = "06_filtered_by_fathmm/" + output_name
+
+    output_name = build_output_name(vcf, "pass")
+
+    command = "scons -f get_pass_variants.scons  INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR=07_pass  OUTPUT_NAME={}".format(output_name)
+
+    #env.Command("07_pass/" + output_name, input_file,  command)
+    env.Command("07_pass/" + output_name, input_file,  command)
