@@ -42,3 +42,5 @@ scons -f launch_annotator.scons SNPSIFT_PATH=~/local/snpEff/ GNOMAD_ANNOTATION_F
 5. **HIGH** and **MODERATE** filter
 
 6. **FATHMM_rankscore** filter
+
+7. **PASS** filter
