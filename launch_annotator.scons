@@ -226,34 +226,37 @@ for vcf in vcfs_files:
     env.Command(["05_high_moderate" + "/" + output_name], [input_file], command)
 
 
-    ################ FILTER BY FATHMM_RANKSCORE #####################
+    ################ GET ONLY THE PASS VARIANTS #####################
 
     input_file = "05_high_moderate/" + output_name
 
-    output_name = build_output_name(vcf, "filtered_by_fathmm")
-
-    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=06_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
-
-    env.Command("06_filtered_by_fathmm/" + output_name, input_file,  command)
-
-
-    ################ GET ONLY THE PASS VARIANTS #####################
-
-    input_file = "06_filtered_by_fathmm/" + output_name
-
     output_name = build_output_name(vcf, "pass")
 
-    command = "scons -f get_pass_variants.scons  INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR=07_pass  OUTPUT_NAME={}".format(output_name)
+    command = "scons -f get_pass_variants.scons  INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR=06_pass  OUTPUT_NAME={}".format(output_name)
 
-    env.Command("07_pass/" + output_name, input_file,  command)
+    env.Command("06_pass/" + output_name, input_file,  command)
 
 
     ################ FILTER BY ALTERNATE ALLELE FREQUENCY #####################
 
-    input_file = "07_pass/" + output_name
+    input_file = "06_pass/" + output_name
 
     output_name = build_output_name(vcf, "population_af")
 
-    command = "scons -f snpsift_filter_by_exome_freq_data.scons DEBUG=T OUTPUT_DIR=08_population_af OUTPUT_NAME={} ".format(output_name) + "INPUT_FILE_PATH={} ".format(input_file) + " SNPSIFT_PATH={} AF_VALUE={} AF={}".format(SNPSIFT_PATH, AF_VALUE, AF)
+    command = "scons -f snpsift_filter_by_exome_freq_data.scons DEBUG=T OUTPUT_DIR=07_population_af OUTPUT_NAME={} ".format(output_name) + "INPUT_FILE_PATH={} ".format(input_file) + " SNPSIFT_PATH={} AF_VALUE={} AF={}".format(SNPSIFT_PATH, AF_VALUE, AF)
 
-    env.Command("08_population_af/" + output_name, input_file,  command)
+    env.Command("07_population_af/" + output_name, input_file,  command)
+    
+
+    ################ FILTER BY FATHMM_RANKSCORE #####################
+
+    input_file = "07_population_af/" + output_name
+
+    output_name = build_output_name(vcf, "filtered_by_fathmm")
+
+    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=08_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
+
+    env.Command("08_filtered_by_fathmm/" + output_name, input_file,  command)
+
+
+
