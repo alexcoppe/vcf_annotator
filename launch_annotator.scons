@@ -48,6 +48,8 @@ except NameError as error:
     vars.Add("FATHMM_RANKSCORE", "The FATHMM_rankscore obtained by dbNSF (default = 0.7)", "0.7")
     vars.Add("GENOME_VERSION", "The genome version to be used in SnpEff annotation (default = GRCh37.75)", "GRCh37.75")
     vars.Add("SNPEFF_DATA_DIR", "The directory where the SnpEff data is present or will be downloaded (default=~/annotations)", "~/annotations")
+    vars.Add("AF_VALUE", "Alternate allele frequency", "0.05")
+    vars.Add("AF", "Allele Frequency among a particular population genotypes", "AF_NFE")
 
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
@@ -62,6 +64,8 @@ except NameError as error:
     FATHMM_RANKSCORE            = env["FATHMM_RANKSCORE"]
     GENOME_VERSION              = env["GENOME_VERSION"]
     SNPEFF_DATA_DIR             = env["SNPEFF_DATA_DIR"]
+    AF_VALUE                    = env["AF_VALUE"]
+    AF                          = env["AF"]
 
     ######################## PARAMETERS CHECKING ######################
 
@@ -241,6 +245,15 @@ for vcf in vcfs_files:
 
     command = "scons -f get_pass_variants.scons  INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR=07_pass  OUTPUT_NAME={}".format(output_name)
 
-    #env.Command("07_pass/" + output_name, input_file,  command)
     env.Command("07_pass/" + output_name, input_file,  command)
 
+
+    ################ FILTER BY ALTERNATE ALLELE FREQUENCY #####################
+
+    input_file = "07_pass/" + output_name
+
+    output_name = build_output_name(vcf, "population_af")
+
+    command = "scons -f snpsift_filter_by_exome_freq_data.scons DEBUG=T OUTPUT_DIR=08_population_af OUTPUT_NAME={} ".format(output_name) + "INPUT_FILE_PATH={} ".format(input_file) + " SNPSIFT_PATH={} AF_VALUE={} AF={}".format(SNPSIFT_PATH, AF_VALUE, AF)
+
+    env.Command("08_population_af/" + output_name, input_file,  command)
