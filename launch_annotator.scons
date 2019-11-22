@@ -50,58 +50,29 @@ except NameError as error:
     vars.Add("SNPEFF_DATA_DIR", "The directory where the SnpEff data is present or will be downloaded (default=~/annotations)", "~/annotations")
     vars.Add("AF_VALUE", "Alternate allele frequency", "0.05")
     vars.Add("AF", "Allele Frequency among a particular population genotypes", "AF_NFE")
+    vars.Add("CLINVAR_ANNOTATION_FILE_PATH", "The location of the ClinVar file used for annotation (default = None)", "")
 
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
 
-    CPUS                        = env["CPUS"]
-    vcf_dir                     = "00_starting_vcfs"
-    DEBUG                       = env["DEBUG"]
-    GNOMAD_ANNOTATION_FILE_PATH = env["GNOMAD_ANNOTATION_FILE_PATH"]
-    DBSNP_ANNOTATION_FILE_PATH  = env["DBSNP_ANNOTATION_FILE_PATH"]
-    DBNSFP_ANNOTATION_FILE_PATH = env["DBNSFP_ANNOTATION_FILE_PATH"]
-    SNPSIFT_PATH                = os.path.join(env["SNPSIFT_PATH"], "")
-    FATHMM_RANKSCORE            = env["FATHMM_RANKSCORE"]
-    GENOME_VERSION              = env["GENOME_VERSION"]
-    SNPEFF_DATA_DIR             = env["SNPEFF_DATA_DIR"]
-    AF_VALUE                    = env["AF_VALUE"]
-    AF                          = env["AF"]
+    CPUS                         = env["CPUS"]
+    vcf_dir                      = "00_starting_vcfs"
+    DEBUG                        = env["DEBUG"]
+    GNOMAD_ANNOTATION_FILE_PATH  = env["GNOMAD_ANNOTATION_FILE_PATH"]
+    DBSNP_ANNOTATION_FILE_PATH   = env["DBSNP_ANNOTATION_FILE_PATH"]
+    DBNSFP_ANNOTATION_FILE_PATH  = env["DBNSFP_ANNOTATION_FILE_PATH"]
+    SNPSIFT_PATH                 = os.path.join(env["SNPSIFT_PATH"], "")
+    FATHMM_RANKSCORE             = env["FATHMM_RANKSCORE"]
+    GENOME_VERSION               = env["GENOME_VERSION"]
+    SNPEFF_DATA_DIR              = env["SNPEFF_DATA_DIR"]
+    AF_VALUE                     = env["AF_VALUE"]
+    AF                           = env["AF"]
+    CLINVAR_ANNOTATION_FILE_PATH = env["CLINVAR_ANNOTATION_FILE_PATH"]
 
     ######################## PARAMETERS CHECKING ######################
 
     if not os.path.exists(vcf_dir):
         sys.exit(bcolors.ERROR + "Directory {} do not exists".format(vcf_dir) + bcolors.ENDC + "\n")
-
-
-    # Check 01_snpsift directory, if do not exists create it
-    try: 
-        os.makedirs("01_snpeff")
-    except OSError:
-        if not os.path.exists("01_snpeff"):
-            sys.exit(bcolors.ERROR + "Error creating directory 01_snpsift: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
-
-    
-    # Check 03_dbsnp directory, if do not exists create it
-    try: 
-        os.makedirs("03_dbsnp")
-    except OSError:
-        if not os.path.exists("03_dbsnp"):
-            sys.exit(bcolors.ERROR + "Error creating directory 03_dbsnp: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
-
-
-    # Check 03_dbnsfp directory, if do not exists create it
-    try: 
-        os.makedirs("04_dbnsfp")
-    except OSError:
-        if not os.path.exists("04_dbnsfp"):
-            sys.exit(bcolors.ERROR + "Error creating directory 04_dbnsfp: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
-
-    # Check 05_high_moderate directory, if do not exists create it
-    try: 
-        os.makedirs("05_high_moderate")
-    except OSError:
-        if not os.path.exists("05_high_moderate"):
-            sys.exit(bcolors.ERROR + "Error creating directory 05_high_moderate: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
 
     # Check GNOMAD_ANNOTATION_FILE_PATH
@@ -118,6 +89,10 @@ except NameError as error:
     if not os.path.exists(SNPSIFT_PATH + "/SnpSift.jar"):
         sys.exit(bcolors.ERROR + "Error: SNPSIFT_PATH ({}) is not right. Could not find SnpSift".format(SNPSIFT_PATH) + bcolors.ENDC + "\n")
 
+
+    # Check CLINVAR_ANNOTATION_FILE_PATH
+    if not os.path.exists(CLINVAR_ANNOTATION_FILE_PATH):
+        sys.exit(bcolors.ERROR + "Error: CLINVAR_ANNOTATION_FILE_PATH ({}) do not exists".format(CLINVAR_ANNOTATION_FILE_PATH) + bcolors.ENDC + "\n")
 
     # Check FATHMM_RANKSCORE
     try:
@@ -148,6 +123,13 @@ if len(vcfs_files) == 0:
 for vcf in vcfs_files:
     ################ SNPEFF ANNOTATION #####################
 
+    # Check 01_snpsift directory, if do not exists create it
+    try: 
+        os.makedirs("01_snpeff")
+    except OSError:
+        if not os.path.exists("01_snpeff"):
+            sys.exit(bcolors.ERROR + "Error creating directory 01_snpsift: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
     output_name = build_output_name(vcf, "snpeff_annotated")
 
     input_file = "00_starting_vcfs/" + vcf
@@ -158,8 +140,9 @@ for vcf in vcfs_files:
 
     env.Command(["01_snpeff/" + output_name], [input_file], command)
 
-    ################ GNOMAD ANNOTATION STEP #####################
 
+
+    ################ GNOMAD ANNOTATION STEP #####################
 
     input_file = "01_snpeff/" + output_name
 
@@ -177,7 +160,15 @@ for vcf in vcfs_files:
     env.Command(["02_gnomad" + "/" + output_name], [input_file], command)
 
 
+
     ################ DBSNP ANNOTATION STEP #####################
+
+    # Check 03_dbsnp directory, if do not exists create it
+    try: 
+        os.makedirs("03_dbsnp")
+    except OSError:
+        if not os.path.exists("03_dbsnp"):
+            sys.exit(bcolors.ERROR + "Error creating directory 03_dbsnp: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
     input_file = "02_gnomad/" + output_name
 
@@ -195,7 +186,14 @@ for vcf in vcfs_files:
     env.Command(["03_dbsnp" + "/" + output_name], [input_file], command)
 
 
+
     ################ DBNSFP ANNOTATION STEP #####################
+
+    try: 
+        os.makedirs("04_dbnsfp")
+    except OSError:
+        if not os.path.exists("04_dbnsfp"):
+            sys.exit(bcolors.ERROR + "Error creating directory 04_dbnsfp: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
     input_file = "03_dbsnp/" + output_name
 
@@ -210,53 +208,103 @@ for vcf in vcfs_files:
         command += " 2> /dev/null "
 
     env.Command(["04_dbnsfp" + "/" + output_name], [input_file], command)
+
+
+    ################ CLINVAR ANNOTATION STEP #####################
+
+   # Check 05_high_moderate directory, if do not exists create it
+    try: 
+        os.makedirs("05_clinvar")
+    except OSError:
+        if not os.path.exists("05_clinvar"):
+            sys.exit(bcolors.ERROR + "Error creating directory 05_clinvar: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file = "04_dbnsfp/" + output_name
+
+    output_name = build_output_name(vcf, "clinvar")
+
+    first_part = "scons -f snpsift_annotate.scons SNPSIFT_PATH={} ANNOTATION_FILE_PATH={} ".format(SNPSIFT_PATH, CLINVAR_ANNOTATION_FILE_PATH)
+    second_part = "INPUT_FILE_PATH=${SOURCE} "
+    third_part = "OUTPUT_DIR=05_clinvar/  OUTPUT_NAME={}".format(output_name)
+    command = first_part + second_part + third_part
+
+    if DEBUG == "F":
+        command += " 2> /dev/null "
+
+    env.Command(["05_clinvar" + "/" + output_name], [input_file], command)
+ 
     
 
     ################ HIGH AND MODERATE FILTER #####################
 
-    input_file = "04_dbnsfp/" + output_name
+   # Check 05_high_moderate directory, if do not exists create it
+    try: 
+        os.makedirs("06_high_moderate")
+    except OSError:
+        if not os.path.exists("06_high_moderate"):
+            sys.exit(bcolors.ERROR + "Error creating directory 06_high_moderate: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file = "05_clinvar/" + output_name
 
     output_name = build_output_name(vcf, "high_moderate")
 
     first_part = "scons -f snpsift_filter_by_impact.scons SNPSIFT_PATH={}  ".format(SNPSIFT_PATH)
     second_part = "INPUT_FILE_PATH=${SOURCE} "
-    third_part = "OUTPUT_DIR=05_high_moderate/  OUTPUT_NAME={}".format(output_name)
+    third_part = "OUTPUT_DIR=06_high_moderate/  OUTPUT_NAME={}".format(output_name)
     command = first_part + second_part + third_part
 
-    env.Command(["05_high_moderate" + "/" + output_name], [input_file], command)
+    env.Command(["06_high_moderate" + "/" + output_name], [input_file], command)
 
 
     ################ GET ONLY THE PASS VARIANTS #####################
 
-    input_file = "05_high_moderate/" + output_name
+    try: 
+        os.makedirs("07_pass")
+    except OSError:
+        if not os.path.exists("07_pass"):
+            sys.exit(bcolors.ERROR + "Error creating directory 07_pass: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file = "06_high_moderate/" + output_name
 
     output_name = build_output_name(vcf, "pass")
 
-    command = "scons -f get_pass_variants.scons  INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR=06_pass  OUTPUT_NAME={}".format(output_name)
+    command = "scons -f get_pass_variants.scons  INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR=07_pass  OUTPUT_NAME={}".format(output_name)
 
-    env.Command("06_pass/" + output_name, input_file,  command)
+    env.Command("07_pass/" + output_name, input_file,  command)
 
 
     ################ FILTER BY ALTERNATE ALLELE FREQUENCY #####################
 
-    input_file = "06_pass/" + output_name
+    try: 
+        os.makedirs("08_population_af")
+    except OSError:
+        if not os.path.exists("08_population_af"):
+            sys.exit(bcolors.ERROR + "Error creating directory 08_population_af: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file = "07_pass/" + output_name
 
     output_name = build_output_name(vcf, "population_af")
 
-    command = "scons -f snpsift_filter_by_exome_freq_data.scons DEBUG=T OUTPUT_DIR=07_population_af OUTPUT_NAME={} ".format(output_name) + "INPUT_FILE_PATH={} ".format(input_file) + " SNPSIFT_PATH={} AF_VALUE={} AF={}".format(SNPSIFT_PATH, AF_VALUE, AF)
+    command = "scons -f snpsift_filter_by_exome_freq_data.scons DEBUG=T OUTPUT_DIR=08_population_af OUTPUT_NAME={} ".format(output_name) + "INPUT_FILE_PATH={} ".format(input_file) + " SNPSIFT_PATH={} AF_VALUE={} AF={}".format(SNPSIFT_PATH, AF_VALUE, AF)
 
-    env.Command("07_population_af/" + output_name, input_file,  command)
+    env.Command("08_population_af/" + output_name, input_file,  command)
     
 
     ################ FILTER BY FATHMM_RANKSCORE #####################
 
-    input_file = "07_population_af/" + output_name
+    try: 
+        os.makedirs("09_filtered_by_fathmm")
+    except OSError:
+        if not os.path.exists("09_filtered_by_fathmm"):
+            sys.exit(bcolors.ERROR + "Error creating directory 08_filtered_by_fathmm: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file = "08_population_af/" + output_name
 
     output_name = build_output_name(vcf, "filtered_by_fathmm")
 
-    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=08_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
+    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=09_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
 
-    env.Command("08_filtered_by_fathmm/" + output_name, input_file,  command)
+    env.Command("09_filtered_by_fathmm/" + output_name, input_file,  command)
 
 
 
