@@ -39,8 +39,8 @@ except NameError as error:
     vars = Variables()
     vars.Add("CPUS", "Number of CPUs to use", '1')
     vars.Add("DEBUG", "Show pipeline error messages", "F")
-    vars.Add("OUTPUT_DIR", "Directory for output (default: ./SnpSift_annotation)", "./SnpSift_annotation")
-    vars.Add("OUTPUT_NAME", "Output name (default: vcf_annotated.vcf)", "vcf_annotated.vcf")
+    vars.Add("OUTPUT_DIR", "Directory for output (default: ./leukemia_vcf)", "./leukemia_vcf")
+    vars.Add("OUTPUT_NAME", "Output name (default: leukemia_genes.vcf)", "leukemia_genes.vcf")
     vars.Add("ANNOTATION_FILE_PATH", "The location of the file used for annotation", "")
     vars.Add("INPUT_FILE_PATH", "The location of the VCF file to be annotated", "")
 
