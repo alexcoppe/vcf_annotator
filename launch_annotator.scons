@@ -98,6 +98,14 @@ except NameError as error:
     if not os.path.exists(CLINVAR_ANNOTATION_FILE_PATH):
         sys.exit(bcolors.ERROR + "Error: CLINVAR_ANNOTATION_FILE_PATH ({}) do not exists".format(CLINVAR_ANNOTATION_FILE_PATH) + bcolors.ENDC + "\n")
 
+    # Check JUNK_GENES_FILE_PATH
+    if not os.path.exists(JUNK_GENES_FILE_PATH):
+        sys.exit(bcolors.ERROR + "Error: JUNK_GENES_FILE_PATH ({}) do not exists".format(JUNK_GENES_FILE_PATH) + bcolors.ENDC + "\n")
+
+    # Check LEUKEMIA_GENES
+    if not os.path.exists(LEUKEMIA_GENES):
+        sys.exit(bcolors.ERROR + "Error: LEUKEMIA_GENES ({}) do not exists".format(LEUKEMIA_GENES) + bcolors.ENDC + "\n")
+
     # Check FATHMM_RANKSCORE
     try:
         float(FATHMM_RANKSCORE)
