@@ -1,0 +1,77 @@
+"""
+Filters out the SNPs from a VCF using COSMIC annotation.
+It is usefull because SnpSift is buggy and some times adds a ";SNP;" sub-field in the INFO column.
+It uses the VCF of coding or non-coding mutations from COSMIC usually called CosmicCodingMuts.vcf.gz 
+
+SITE:
+    https://cancer.sanger.ac.uk/cosmic
+    https://github.com/alexcoppe/iSeqs2/tree/master/scripts/remove_snps_from_cosmic
+
+CITATION:
+    Tate JG, Bamford S, Jubb HC, Sondka Z, Beare DM, Bindal N, Boutselakis H, Cole
+    CG, Creatore C, Dawson E, Fish P, Harsha B, Hathaway C, Jupe SC, Kok CY, Noble K,
+    Ponting L, Ramshaw CC, Rye CE, Speedy HE, Stefancsik R, Thompson SL, Wang S, Ward
+    S, Campbell PJ, Forbes SA. COSMIC: the Catalogue Of Somatic Mutations In Cancer. 
+    Nucleic Acids Res. 2019 Jan
+"""
+
+Import('*')
+
+import os
+import sys
+import os.path
+import subprocess
+
+class bcolors:
+    OKGREEN = '\033[92m'
+    ERROR   = '\033[91m'
+    ENDC    = '\033[0m'
+
+
+
+try:
+    env = env
+except NameError as error:
+    print(bcolors.ERROR + str(error) + bcolors.ENDC)
+    print(bcolors.OKGREEN + "Lets go with the DEFAULT variables" + bcolors.ENDC)
+
+    vars = Variables()
+    vars.Add("OUTPUT_DIR", "Directory for output (default: ./fathmm_rankscore_filtered)", "./no_snps")
+    vars.Add("OUTPUT_NAME", "Output name (default: vcf_fathmm_filtered.vcf)", "vcf_no_snps.vcf")
+    vars.Add("INPUT_FILE_PATH", "The location of the VCF file to be filtered", "")
+    vars.Add("COSMIC_FILE", "The location of the COSMIC_FILE", "")
+
+    env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
+    Decider('timestamp-newer')    
+
+    OUTPUT_DIR              = env["OUTPUT_DIR"]
+    OUTPUT_NAME             = env["OUTPUT_NAME"]
+    INPUT_FILE_PATH         = env["INPUT_FILE_PATH"]
+    COSMIC_FILE             = env["COSMIC_FILE"]
+
+    try:
+        # Once moved to python 3.5 change to subprocess.run
+        subprocess.Popen(["remove_snps_from_cosmic.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except:
+        sys.exit(bcolors.ERROR + "Could not run remove_snps_from_cosmic.py".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    try: 
+        os.makedirs(OUTPUT_DIR)
+    except OSError:
+        if not os.path.exists(OUTPUT_DIR):
+            sys.exit(bcolors.ERROR + "Error creating directory OUTPUT_DIR: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    if os.path.isfile(COSMIC_FILE) == False:
+        sys.exit(bcolors.ERROR + "File from option COSMIC_FILE: {} do not exists".format(COSMIC_FILE) + bcolors.ENDC + "\n")
+    if not COSMIC_FILE.endswith(".vcf.gz"):
+        sys.exit(bcolors.ERROR + "Error: file COSMIC_FILE {} is not a .vcf.gz".format(COSMIC_FILE) + bcolors.ENDC + "\n")
+
+    if os.path.isfile(INPUT_FILE_PATH) == False:
+        sys.exit(bcolors.ERROR + "Error: file INPUT_FILE_PATH {} that should be filtered do not exists".format(INPUT_FILE_PATH) + bcolors.ENDC + "\n")
+
+    Help(vars.GenerateHelpText(env))
+
+TARGET = os.path.join(OUTPUT_DIR, OUTPUT_NAME)
+filter_command = "remove_snps_from_cosmic.py -c {}".format(COSMIC_FILE)  + " -v  ${SOURCE} > ${TARGET}"
+
+env.Command(TARGET, INPUT_FILE_PATH, filter_command)
