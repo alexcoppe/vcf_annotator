@@ -13,6 +13,9 @@ CITATION:
     Ponting L, Ramshaw CC, Rye CE, Speedy HE, Stefancsik R, Thompson SL, Wang S, Ward
     S, Campbell PJ, Forbes SA. COSMIC: the Catalogue Of Somatic Mutations In Cancer. 
     Nucleic Acids Res. 2019 Jan
+
+EXAMPLE:
+    scons -f  filter_by_snps.scons OUTPUT_DIR=no_snps OUTPUT_NAME=no_snps.vcf COSMIC_FILE=~/annotations/CosmicCodingMuts.vcf.gz INPUT_FILE_PATH=10_leukemia/tumor_control_merged_snps_leukemia.vcf
 """
 
 Import('*')
