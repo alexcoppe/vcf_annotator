@@ -53,6 +53,7 @@ except NameError as error:
     vars.Add("CLINVAR_ANNOTATION_FILE_PATH", "The location of the ClinVar file used for annotation (default = None)", "")
     vars.Add("JUNK_GENES_FILE_PATH", "The location of the junk_genes.txt (default = None", "")
     vars.Add("LEUKEMIA_GENES", "The location of the file containing the leukemia genes (default = None)", "")
+    vars.Add("COSMIC_FILE_PATH", "The location of the file from Cosmic like CosmicCodingMuts.vcf.gz   (default = None)", "")
 
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
@@ -72,6 +73,7 @@ except NameError as error:
     CLINVAR_ANNOTATION_FILE_PATH = env["CLINVAR_ANNOTATION_FILE_PATH"]
     JUNK_GENES_FILE_PATH         = env["JUNK_GENES_FILE_PATH"]
     LEUKEMIA_GENES               = env["LEUKEMIA_GENES"]
+    COSMIC_FILE_PATH             = env["COSMIC_FILE_PATH"]
 
     ######################## PARAMETERS CHECKING ######################
 
@@ -315,46 +317,61 @@ for vcf in vcfs_files:
 
     output_name = build_output_name(vcf, "no_junk")
 
-    #command = "scons -f remove_junk_genes.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=09_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
     command = "scons -f remove_junk_genes.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "JUNK_GENES_FILE_PATH={} OUTPUT_DIR={}  OUTPUT_NAME={}".format(JUNK_GENES_FILE_PATH, "09_no_junk", output_name)
 
     env.Command("09_no_junk/" + output_name, input_file,  command)
 
-    
 
-    ################ KEEP ONLY LEUKEMIA GENES #####################
+    ################ REMOVE SNPs #####################
 
     try: 
-        os.makedirs("10_leukemia")
+        os.makedirs("10_no_snps")
     except OSError:
-        if not os.path.exists("10_leukemia"):
-            sys.exit(bcolors.ERROR + "Error creating directory 10_leukemia: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+        if not os.path.exists("10_no_snps"):
+            sys.exit(bcolors.ERROR + "Error creating directory 10_no_snps: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
     input_file = "09_no_junk/" + output_name
 
+    output_name = build_output_name(vcf, "no_snp")
+
+    command = "scons -f filter_by_snps.scons INPUT_FILE_PATH=${SOURCE} " + "COSMIC_FILE={} OUTPUT_DIR={}  OUTPUT_NAME={}".format(COSMIC_FILE_PATH, "10_no_snps", output_name)
+
+    env.Command("10_no_snps/" + output_name, input_file,  command)
+
+ 
+    ################ KEEP ONLY LEUKEMIA GENES #####################
+
+    try: 
+        os.makedirs("11_leukemia")
+    except OSError:
+        if not os.path.exists("11_leukemia"):
+            sys.exit(bcolors.ERROR + "Error creating directory 11_leukemia: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file = "10_no_snps/" + output_name
+
     output_name = build_output_name(vcf, "leukemia")
 
-    command = "scons -f get_leukemia_genes.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "ANNOTATION_FILE_PATH={} OUTPUT_DIR={} OUTPUT_NAME={}".format(LEUKEMIA_GENES, "10_leukemia", output_name)
+    command = "scons -f get_leukemia_genes.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "ANNOTATION_FILE_PATH={} OUTPUT_DIR={} OUTPUT_NAME={}".format(LEUKEMIA_GENES, "11_leukemia", output_name)
 
-    env.Command("10_leukemia/" + output_name, input_file,  command)
+    env.Command("11_leukemia/" + output_name, input_file,  command)
 
 
 
     ################ FILTER BY FATHMM_RANKSCORE #####################
 
     try: 
-        os.makedirs("11_filtered_by_fathmm")
+        os.makedirs("12_filtered_by_fathmm")
     except OSError:
-        if not os.path.exists("11_filtered_by_fathmm"):
-            sys.exit(bcolors.ERROR + "Error creating directory 11_filtered_by_fathmm: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+        if not os.path.exists("12_filtered_by_fathmm"):
+            sys.exit(bcolors.ERROR + "Error creating directory 12_filtered_by_fathmm: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
-    input_file = "10_leukemia/" + output_name
+    input_file = "11_leukemia/" + output_name
 
     output_name = build_output_name(vcf, "filtered_by_fathmm")
 
-    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=11_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
+    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=12_filtered_by_fathmm OUTPUT_NAME={}".format(output_name) 
 
-    env.Command("11_filtered_by_fathmm/" + output_name, input_file,  command)
+    env.Command("12_filtered_by_fathmm/" + output_name, input_file,  command)
 
 
 
