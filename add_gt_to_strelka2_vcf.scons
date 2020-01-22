@@ -1,0 +1,75 @@
+"""
+Adds the GT field in the Strelka2 VCF output
+
+SITE:
+    https://github.com/Illumina/strelka
+
+CITATION:
+    Kim, S., Scheffler, K. et al. (2018) Strelka2: fast and accurate calling of germline and somatic variants.
+    Nature Methods, 15, 591-594. doi:10.1038/s41592-018-0051-x
+
+EXAMPLE:
+    scons -f add_gt_to_strelka2_vcf.scons INPUT_FILE_PATH=00_starting_vcfs/HV_ES_HV_REM_strelka2_snvs_cosmic.vcf OUTPUT_DIR=strelka2_with_gt OUTPUT_NAME=strelka2_with_gt.vcf TYPE_OF_VARIANTS=snps
+"""
+
+
+
+Import('*')
+
+import os
+import sys
+import os.path
+import subprocess
+
+class bcolors:
+    OKGREEN = '\033[92m'
+    ERROR   = '\033[91m'
+    ENDC    = '\033[0m'
+
+
+
+try:
+    env = env
+except NameError as error:
+    print(bcolors.ERROR + str(error) + bcolors.ENDC)
+    print(bcolors.OKGREEN + "Lets go with the DEFAULT variables" + bcolors.ENDC)
+
+    vars = Variables()
+    vars.Add("OUTPUT_DIR", "Directory for output (default: ./strelka2_with_gt)", "./strelka2_with_gt")
+    vars.Add("OUTPUT_NAME", "Output name (default: strelka2_with_gt.vcf)", "strelka2_with_gt.vcf")
+    vars.Add("INPUT_FILE_PATH", "The location of the VCF generated with Strelka2", "")
+    vars.Add("TYPE_OF_VARIANTS", "The type of variants in the VCF, snps or indels (default: snps)", "snps")
+
+    env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
+    Decider('timestamp-newer')    
+
+    OUTPUT_DIR              = env["OUTPUT_DIR"]
+    OUTPUT_NAME             = env["OUTPUT_NAME"]
+    INPUT_FILE_PATH         = env["INPUT_FILE_PATH"]
+    TYPE_OF_VARIANTS        = env["TYPE_OF_VARIANTS"]
+
+    if TYPE_OF_VARIANTS not in ["snps", "indels"]:
+        sys.exit(bcolors.ERROR + "{} not a valid TYPE_OF_VARIANTS. It shoud be snps os indels".format(TYPE_OF_VARIANTS) + bcolors.ENDC + "\n")
+
+    try:
+        # Once moved to python 3.5 change to subprocess.run
+        subprocess.Popen(["update_GT_Strelka2.py"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    except:
+        sys.exit(bcolors.ERROR + "Could not run update_GT_Strelka2.py".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    try: 
+        os.makedirs(OUTPUT_DIR)
+    except OSError:
+        if not os.path.exists(OUTPUT_DIR):
+            sys.exit(bcolors.ERROR + "Error creating directory OUTPUT_DIR: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+        if os.path.isfile(INPUT_FILE_PATH) == False:
+            sys.exit(bcolors.ERROR + "Error: file INPUT_FILE_PATH {} that should be filtered do not exists".format(INPUT_FILE_PATH) + bcolors.ENDC + "\n")
+
+
+    Help(vars.GenerateHelpText(env))
+
+TARGET = os.path.join(OUTPUT_DIR, OUTPUT_NAME)
+filter_command = "update_GT_Strelka2.py -t {} ".format(TYPE_OF_VARIANTS) + " -v ${SOURCE}  > ${TARGET}"
+
+env.Command(TARGET, INPUT_FILE_PATH, filter_command)
