@@ -405,6 +405,43 @@ for vcf in vcfs_files:
     env.Command("12_leukemia/" + output_name, input_file,  command)
 
 
+    ################ From VCFS TO TABLES #####################
+
+    try: 
+        os.makedirs("13_tables")
+    except OSError:
+        if not os.path.exists("13_tables"):
+            sys.exit(bcolors.ERROR + "Error creating directory 13_tables: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file = "12_leukemia/" + output_name
+
+    output_name = build_output_name(vcf, "tables").split(".")[0] + ".txt"
+
+    command = "scons -f snpsift_from_vcf_to_table.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR={} OUTPUT_NAME={} SNPSIFT_PATH={}".format("13_tables/", output_name, SNPSIFT_PATH)
+    #command = "scons -f filter_by_expression.scons INPUT_FILE_PATH=${SOURCE} " + "NX={} RNA_TISSUE_CONSENSUS={} ".format(NX, RNA_TISSUE_CONSENSUS) + "OUTPUT_DIR=12_filtered_by_gene_expression OUTPUT_NAME={}".format(output_name) 
+
+    env.Command("13_tables/" + output_name, input_file,  command)
+
+
+    ################ FILTER BY GENE EXPRESSION #####################
+
+    #try: 
+        #os.makedirs("12_filtered_by_gene_expression")
+    #except OSError:
+        #if not os.path.exists("12_filtered_by_gene_expression"):
+            #sys.exit(bcolors.ERROR + "Error creating directory 12_filtered_by_gene_expression: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    #input_file = "11_leukemia/" + output_name
+
+    #output_name = build_output_name(vcf, "filtered_by_gene_expression")
+
+    #command = "scons -f filter_by_expression.scons INPUT_FILE_PATH=${SOURCE} " + "NX={} RNA_TISSUE_CONSENSUS={} ".format(NX, RNA_TISSUE_CONSENSUS) + "OUTPUT_DIR=12_filtered_by_gene_expression OUTPUT_NAME={}".format(output_name) 
+
+    #env.Command("12_filtered_by_gene_expression/" + output_name, input_file,  command)
+
+
+
+
     ################ FILTER BY GENE EXPRESSION #####################
 
     #try: 
