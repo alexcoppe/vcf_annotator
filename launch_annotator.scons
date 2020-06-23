@@ -286,7 +286,7 @@ for vcf in vcfs_files:
 
     output_name = build_output_name(vcf, "clinvar")
 
-    first_part = "scons -f snpsift_annotate.scons SNPSIFT_PATH={} ANNOTATION_FILE_PATH={} ".format(SNPSIFT_PATH, CLINVAR_ANNOTATION_FILE_PATH)
+    first_part = "scons -f snpsift_annotate.scons NO_ID_ANNOTATION=T SNPSIFT_PATH={} ANNOTATION_FILE_PATH={} ".format(SNPSIFT_PATH, CLINVAR_ANNOTATION_FILE_PATH)
     second_part = "INPUT_FILE_PATH=${SOURCE} "
     third_part = "OUTPUT_DIR=06_clinvar/  OUTPUT_NAME={}".format(output_name)
     command = first_part + second_part + third_part

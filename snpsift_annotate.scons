@@ -39,6 +39,7 @@ except NameError as error:
     vars.Add("OUTPUT_NAME", "Output name (default: vcf_annotated.vcf)", "vcf_annotated.vcf")
     vars.Add("ANNOTATION_FILE_PATH", "The location of the file used for annotation", "")
     vars.Add("INPUT_FILE_PATH", "The location of the VCF file to be annotated", "")
+    vars.Add("NO_ID_ANNOTATION", "Do not annotate the id field in the VCF (default: F)", "F")
 
     env = Environment(ENV = os.environ, SHELL = '/bin/bash', variables = vars)
     Decider('timestamp-newer')    
@@ -50,6 +51,7 @@ except NameError as error:
     ANNOTATION_FILE_PATH = env["ANNOTATION_FILE_PATH"]
     INPUT_FILE_PATH      = env["INPUT_FILE_PATH"]
     SNPSIFT_PATH         = os.path.join(env["SNPSIFT_PATH"], "SnpSift.jar")
+    NO_ID_ANNOTATION     = env["NO_ID_ANNOTATION"]
     
 
     try: 
@@ -76,7 +78,14 @@ except NameError as error:
         Exit(1)
 
 SNPSIFT_TARGET = os.path.join(OUTPUT_DIR, OUTPUT_NAME)
-annotationCmd = "java -jar {} annotate ".format(SNPSIFT_PATH) + "${SOURCES[0]} ${SOURCES[1]}" + " > ${TARGET}"
+
+if NO_ID_ANNOTATION == "F":
+    stating_part_of_cmd = "java -jar {} annotate ".format(SNPSIFT_PATH) 
+else:
+    stating_part_of_cmd = "java -jar {} annotate -noId ".format(SNPSIFT_PATH) 
+
+annotationCmd = stating_part_of_cmd + "${SOURCES[0]} ${SOURCES[1]}" + " > ${TARGET}"
+
 if DEBUG == "F":
     annotationCmd += " 2> /dev/null "
 
