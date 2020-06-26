@@ -26,6 +26,25 @@ class bcolors:
     ENDC    = '\033[0m'
 
 
+def is_germline_or_somatic(f):
+    try:
+        open_file = open(f)
+    except IOerror:
+        print("Error: file {} does not appear to exists".format(f))
+        return 0
+    for line in open_file.readlines():
+        if line.startswith("#"):
+            pass
+        else:
+            line_elements = line.split("\t")
+            l = len(line_elements)
+            if l == 10:
+                return "germline"
+            if l > 11:
+                return "somatic"
+    print(bcolors.ERROR + "Not a VCF file, less than 10 fields available" + bcolors.ENDC)
+    sys.exit(1)
+
 
 try:
     env = env
@@ -74,7 +93,12 @@ except NameError as error:
 
 SNPSIFT_TARGET = os.path.join(OUTPUT_DIR, OUTPUT_NAME)
 
-extractFieldsCmd = "cat ${SOURCE} | " + "java -jar {}  extractFields - CHROM POS ID REF ALT FILTER ANN[*].GENE ANN[*].IMPACT CLNSIG FORMAT GEN[0] GEN[1] -s ',' -e '.' > ".format(SNPSIFT_PATH) +  "$TARGET"
+germline_or_somatic = is_germline_or_somatic(INPUT_FILE_PATH)
+
+if germline_or_somatic == "germline":
+    extractFieldsCmd = "cat ${SOURCE} | " + "java -jar {}  extractFields - CHROM POS ID REF ALT FILTER ANN[*].GENE ANN[*].IMPACT CLNSIG FORMAT GEN[0] -s ',' -e '.' > ".format(SNPSIFT_PATH) +  "$TARGET"
+if germline_or_somatic == "somatic":
+    extractFieldsCmd = "cat ${SOURCE} | " + "java -jar {}  extractFields - CHROM POS ID REF ALT FILTER ANN[*].GENE ANN[*].IMPACT CLNSIG FORMAT GEN[0] GEN[1] -s ',' -e '.' > ".format(SNPSIFT_PATH) +  "$TARGET"
 
 if DEBUG == "F":
     extractFieldsCmd += " 2> /dev/null "
