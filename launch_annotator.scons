@@ -32,6 +32,19 @@ def is_a_strelka2_vcf(vcf_file_path):
     return False
 
 
+def is_a_varscan2_vcf(vcf_file_path):
+    is_varscan_result = False
+    f = open(vcf_file_path)
+    for line in f:
+        if line.startswith("#"):
+            if line.startswith("##source=VarScan2"):
+                is_varscan_result = True
+                return is_varscan_result
+    f.close()
+
+    return False
+
+
 def strelka2_type(vcf):
     f = open(vcf)
     for line in f:
@@ -405,75 +418,98 @@ for vcf in vcfs_files:
     env.Command("12_leukemia/" + output_name, input_file,  command)
 
 
+    ################ REMOVE GERMLINE VARIANTS #####################
+
+    try: 
+        os.makedirs("13_no_varscan_germline")
+    except OSError:
+        if not os.path.exists("13_no_varscan_germline"):
+            sys.exit(bcolors.ERROR + "Error creating directory 13_no_varscan_germline: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+
+    input_file_from_leukemia = "12_leukemia/" + output_name
+
+    if is_a_varscan2_vcf(input_file_from_leukemia) == True:
+        no_germline_output_name = "13_no_varscan_germline/" + build_output_name(output_name, "clean")
+
+        command = "scons -f remove_germline_from_varscan.scons DEBUG=T VARSCAN_VCF=${SOURCE} OUTPUT_FILE_NAME=${TARGET} MAX_CONTROL_FREQUENCY=0"
+
+        env.Command([no_germline_output_name], [input_file_from_leukemia], command)
+
+    else:
+        no_germline_output_name = "13_no_varscan_germline/" + build_output_name(output_name, "clean")
+        command = "cp ${SOURCE} ${TARGET}"
+        env.Command([no_germline_output_name], [input_file], command)
+
+
     ################ From VCFS TO TABLES #####################
 
     try: 
-        os.makedirs("13_tables")
+        os.makedirs("14_tables")
     except OSError:
-        if not os.path.exists("13_tables"):
-            sys.exit(bcolors.ERROR + "Error creating directory 13_tables: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+        if not os.path.exists("14_tables"):
+            sys.exit(bcolors.ERROR + "Error creating directory 14_tables: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
-    input_file = "12_leukemia/" + output_name
+    input_file = no_germline_output_name
 
     output_name = build_output_name(vcf, "tables").split(".")[0] + ".txt"
 
-    command = "scons -f snpsift_from_vcf_to_table.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR={} OUTPUT_NAME={} SNPSIFT_PATH={}".format("13_tables/", output_name, SNPSIFT_PATH)
+    command = "scons -f snpsift_from_vcf_to_table.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR={} OUTPUT_NAME={} SNPSIFT_PATH={}".format("14_tables", output_name, SNPSIFT_PATH)
 
-    env.Command("13_tables/" + output_name, input_file,  command)
+    env.Command("14_tables/" + output_name, input_file,  command)
 
 
     ################ FILTER BY GENE EXPRESSION #####################
 
     try: 
-        os.makedirs("14_filtered_by_gene_expression")
+        os.makedirs("15_filtered_by_gene_expression")
     except OSError:
-        if not os.path.exists("14_filtered_by_gene_expression"):
-            sys.exit(bcolors.ERROR + "Error creating directory 14_filtered_by_gene_expression: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+        if not os.path.exists("15_filtered_by_gene_expression"):
+            sys.exit(bcolors.ERROR + "Error creating directory 15_filtered_by_gene_expression: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
-    input_file = "12_leukemia/" + build_output_name(vcf, "leukemia")
+    input_file = no_germline_output_name
 
     output_name = build_output_name(vcf, "filtered_by_gene_expression").split(".")[0] + ".vcf"
 
-    command = "scons -f filter_by_expression.scons INPUT_FILE_PATH=${SOURCE} " + "NX={} RNA_TISSUE_CONSENSUS={} ".format(NX, RNA_TISSUE_CONSENSUS) + "OUTPUT_DIR=14_filtered_by_gene_expression OUTPUT_NAME={}".format(output_name) 
+    command = "scons -f filter_by_expression.scons INPUT_FILE_PATH=${SOURCE} " + "NX={} RNA_TISSUE_CONSENSUS={} ".format(NX, RNA_TISSUE_CONSENSUS) + "OUTPUT_DIR=15_filtered_by_gene_expression OUTPUT_NAME={}".format(output_name) 
 
-    env.Command("14_filtered_by_gene_expression/" + output_name, input_file,  command)
+    env.Command("15_filtered_by_gene_expression/" + output_name, input_file,  command)
 
 
     ################ From VCFS OBTAINED FROM GENE EXPRESSION FILTER  TO TABLE  #####################
 
     try: 
-        os.makedirs("15_tables")
+        os.makedirs("16_tables")
     except OSError:
-        if not os.path.exists("15_tables"):
-            sys.exit(bcolors.ERROR + "Error creating directory 15_tables: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
+        if not os.path.exists("16_tables"):
+            sys.exit(bcolors.ERROR + "Error creating directory 16_tables: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
-    input_file = "14_filtered_by_gene_expression/" + output_name
+    input_file = "15_filtered_by_gene_expression/" + output_name
 
     output_name = build_output_name(vcf, "tables").split(".")[0] + ".txt"
 
-    command = "scons -f snpsift_from_vcf_to_table.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR={} OUTPUT_NAME={} SNPSIFT_PATH={}".format("15_tables/", output_name, SNPSIFT_PATH)
+    command = "scons -f snpsift_from_vcf_to_table.scons DEBUG=T INPUT_FILE_PATH=${SOURCE} " + "OUTPUT_DIR={} OUTPUT_NAME={} SNPSIFT_PATH={}".format("16_tables/", output_name, SNPSIFT_PATH)
 
-    env.Command("15_tables/" + output_name, input_file,  command)
+    env.Command("16_tables/" + output_name, input_file,  command)
 
 
     ################ FILTER BY FATHMM_RANKSCORE #####################
 
 
     try: 
-        os.makedirs("16_filtered_by_fathmm_tables")
+        os.makedirs("17_filtered_by_fathmm_tables")
     except OSError:
-        if not os.path.exists("16_filtered_by_fathmm_tables"):
+        if not os.path.exists("17_filtered_by_fathmm_tables"):
             sys.exit(bcolors.ERROR + "Error creating directory 16_filtered_by_fathmm: {}. Check permissions".format(OUTPUT_DIR) + bcolors.ENDC + "\n")
 
     #input_file = "14_filtered_by_gene_expression/" + output_name
-    input_file = "15_tables/" + output_name
+    input_file = "16_tables/" + output_name
 
     #output_name = build_output_name(vcf, "filtered_by_fathmm")
     output_name = build_output_name(vcf, "tables").split(".")[0] + ".txt"
 
-    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=16_filtered_by_fathmm_tables OUTPUT_NAME={}".format(output_name) 
+    command = "scons -f filter_by_fathmm_rankscore.scons INPUT_FILE_PATH=${SOURCE} " + "DBNSFP_FATHMM_RANKSCORE={} ".format(FATHMM_RANKSCORE) + "OUTPUT_DIR=17_filtered_by_fathmm_tables OUTPUT_NAME={}".format(output_name) 
 
-    env.Command("16_filtered_by_fathmm_tables/" + output_name, input_file,  command)
+    env.Command("17_filtered_by_fathmm_tables/" + output_name, input_file,  command)
 
 
 
