@@ -21,6 +21,19 @@ class bcolors:
     ERROR   = '\033[91m'
     ENDC    = '\033[0m'
 
+def is_a_varscan2_vcf(vcf_file_path):
+    is_varscan_result = False
+    f = open(vcf_file_path)
+    for line in f:
+        if line.startswith("#"):
+            if line.startswith("##source=VarScan2"):
+                is_varscan_result = True
+                return is_varscan_result
+    f.close()
+
+    return False
+
+
 try:
     env = env
 except NameError as error:
@@ -41,12 +54,18 @@ except NameError as error:
     OUTPUT_FILE_NAME      = env["OUTPUT_FILE_NAME"]
     MAX_CONTROL_FREQUENCY = env["MAX_CONTROL_FREQUENCY"]
 
+
+    if is_a_varscan2_vcf(VARSCAN_VCF):
+        remove_germline_from_varscanCMD = "remove_germline_variants_from_varscan.py -f {}".format(MAX_CONTROL_FREQUENCY) + " -v ${SOURCE} > ${TARGET}"
+    else:
+        remove_germline_from_varscanCMD = "cp ${SOURCE} ${TARGET}"
+
     if os.path.isfile(VARSCAN_VCF) == False:
         sys.exit(bcolors.ERROR + "File {} do not exists".format(VARSCAN_VCF) + bcolors.ENDC + "\n")
 
     Help(vars.GenerateHelpText(env))
 
-    remove_germline_from_varscanCMD = "remove_germline_variants_from_varscan.py -f {}".format(MAX_CONTROL_FREQUENCY) + " -v ${SOURCE} > ${TARGET}"
+    #remove_germline_from_varscanCMD = "remove_germline_variants_from_varscan.py -f {}".format(MAX_CONTROL_FREQUENCY) + " -v ${SOURCE} > ${TARGET}"
 
     if DEBUG == "F":
         extractFieldsCmd += " 2> /dev/null "
